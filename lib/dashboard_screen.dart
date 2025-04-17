@@ -126,107 +126,159 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<int> _getActiveLedIds() {
     return _isAutomationEnabled ? [1, 2, 3, 4] : [0, 1, 2, 3];
   }
+@override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Color(0xFFF1F1F1), // Slightly darker than white (beige tone)
+    appBar: AppBar(
+  title: Text('Dashboard',
+          style: TextStyle(
+          color: Colors.white,
+          fontSize: 24, // You can adjust this size to your preference
+          fontWeight: FontWeight.bold
+          ),
+        ),
+      backgroundColor: Colors.black,
+      actions: [
+        Row(
+          children: [
+            Text('Auto', style: TextStyle(color: Colors.white)),
+            Switch(
+              value: _isAutomationEnabled,
+              onChanged: (value) => _toggleAutomation(),
+              activeColor: Colors.green,
+              inactiveThumbColor: Colors.red,
+              inactiveTrackColor: Colors.grey,
+            ),
+          ],
+        ),
+      ],
+    ),
+    body: SingleChildScrollView( // Make the whole page scrollable
+  child: Column(
+    children: [
+      // Map container
+      Container(
+        margin: EdgeInsets.all(10),
+        width: MediaQuery.of(context).size.width * 0.95, // Adjust width
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 6,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        height: MediaQuery.of(context).size.height * 0.4,
+        child: FlutterMap(
+          options: MapOptions(
+            center: LatLng(14.700356, 121.031860),
+            zoom: 17.0,
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+              subdomains: ['a', 'b', 'c'],
+            ),
+            MarkerLayer(
+              markers: _getDynamicLedLocations().entries.map((entry) {
+                final id = entry.key;
+                final location = entry.value;
+                final isOn = _ledStatuses[id] ?? false;
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Dashboard'),
-        actions: [
-          Row(
-            children: [
-              Text('Auto', style: TextStyle(color: Colors.white)),
-              Switch(
-                value: _isAutomationEnabled,
-                onChanged: (value) => _toggleAutomation(),
+                return Marker(
+                  width: 80.0,
+                  height: 80.0,
+                  point: location,
+                  builder: (ctx) => GestureDetector(
+                    onTap: () => _toggleLed(id, !isOn),
+                    child: Icon(
+                      Icons.circle,
+                      color: isOn ? Colors.green : Colors.red,
+                      size: 30.0,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+
+      // Button container
+      Container(
+        margin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+        width: MediaQuery.of(context).size.width * 0.95, // Adjust width
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 6,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Text(
+              'Manual LED Controls',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+                color: Colors.black, // Set to black
+              ),
+            ),
+            SizedBox(height: 10),
+            ...List.generate(4, (index) {
+              final id = index;
+              final isOn = _ledStatuses[id] ?? false;
+
+              return SwitchListTile(
+                contentPadding: EdgeInsets.symmetric(horizontal: 10),
+                title: Text(
+                  'LED ${index + 1}',
+                  style: TextStyle(color: Colors.black), // Set to black
+                ),
+                subtitle: Text(
+                  isOn ? 'ON' : 'OFF',
+                  style: TextStyle(color: Colors.black87),
+                ),
+                value: isOn,
+                onChanged: _isAutomationEnabled ? null : (value) => _toggleLed(id, value),
                 activeColor: Colors.green,
                 inactiveThumbColor: Colors.red,
-                inactiveTrackColor: Colors.grey,
-              ),
-            ],
-          ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          FlutterMap(
-            options: MapOptions(
-              center: LatLng(14.700356, 121.031860),
-              zoom: 17.0,
-            ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                subdomains: ['a', 'b', 'c'],
-              ),
-              MarkerLayer(
-                markers: _getDynamicLedLocations().entries.map((entry) {
-                  final id = entry.key;
-                  final location = entry.value;
-                  final isOn = _ledStatuses[id] ?? false;
-
-                  return Marker(
-                    width: 80.0,
-                    height: 80.0,
-                    point: location,
-                    builder: (ctx) => GestureDetector(
-                      onTap: () => _toggleLed(id, !isOn),
-                      child: Icon(
-                        Icons.circle,
-                        color: isOn ? Colors.green : Colors.red,
-                        size: 30.0,
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ],
-          ),
-          Positioned(
-            bottom: 20,
-            left: 10,
-            right: 10,
-            child: Column(
-              children: [
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: List.generate(4, (index) {
-                    final id = index; // use index directly as id (0 to 3)
-                    final isOn = _ledStatuses[id] ?? false;
-
-                    return ElevatedButton(
-                      onPressed: _isAutomationEnabled ? null : () => _toggleLed(id, !isOn),
-                      child: Text(
-                        isOn ? 'Turn OFF LED ${index + 1}' : 'Turn ON LED ${index + 1}',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _isAutomationEnabled
-                            ? Colors.grey
-                            : (isOn ? Colors.green : Colors.red),
-                        disabledBackgroundColor: Colors.grey,
-                      ),
-                    );
-
-
-                  }).toList(),
-                ),
-                SizedBox(height: 10),
-                ElevatedButton(
-                onPressed: () {
-                  for (int id = 0; id < 4; id++) {
-                    final newState = !_ledStatuses[id]!;
-                    _toggleLed(id, newState);
-                  }
-                },
+                inactiveTrackColor: Colors.grey[400],
+              );
+            }),
+            SizedBox(height: 15),
+            Center(
+              child: ElevatedButton(
+                onPressed: _isAutomationEnabled
+                    ? null
+                    : () {
+                        for (int id = 0; id < 4; id++) {
+                          final newState = !_ledStatuses[id]!;
+                          _toggleLed(id, newState);
+                        }
+                      },
                 child: Text('Toggle All LEDs'),
-              ),
-
-              ],
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _isAutomationEnabled ? Colors.grey : Colors.blueGrey,
+                  foregroundColor: Colors.white,
             ),
-          ),
-        ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
