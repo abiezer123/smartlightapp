@@ -11,6 +11,7 @@ class AlertsScreen extends StatefulWidget {
 
 class _AlertsScreenState extends State<AlertsScreen> {
   List<Map<String, dynamic>> _alerts = [];
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -18,118 +19,90 @@ class _AlertsScreenState extends State<AlertsScreen> {
     _fetchAlerts();
   }
 
-  // Fetch alerts from the ESP32 server
   Future<void> _fetchAlerts() async {
-    // Replace with your ESP32's IP address
+    setState(() {
+      _isLoading = true;
+    });
+
     const String esp32Url = 'http://192.168.4.1/faultAlert';
 
     try {
       final response = await http.get(Uri.parse(esp32Url));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        // Assuming the ESP32 returns a list of alerts
         setState(() {
           _alerts = List<Map<String, dynamic>>.from(data['alerts']);
         });
       }
     } catch (e) {
       print('Error fetching alerts: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
-  // Dismiss alert by index
-  void _dismissAlert(int index) {
-    setState(() {
-      _alerts.removeAt(index);
-    });
-  }
-
-  // Call emergency services (you can replace this with actual functionality)
   void _callEmergency() {
-    print('Emergency services called!');
+    // Simulate calling emergency services
+    print('📞 Emergency services called!');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Emergency services have been notified!')),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Alerts & Notifications'),
+        title: Text('Alerts'),
       ),
-      body: _alerts.isEmpty
-          ? Center(
-              child: Text(
-                'No alerts at the moment',
-                style: TextStyle(fontSize: 16),
-              ),
-            )
-          : ListView.builder(
-              itemCount: _alerts.length,
-              itemBuilder: (context, index) {
-                final alert = _alerts[index];
-                String alertType = alert['type'] ?? 'Unknown';
-                String message = alert['message'] ?? 'Unknown Alert';
-                String timestamp = alert['timestamp'] ?? 'Unknown time';
-                bool isCritical = alert['isCritical'] ?? false; // Determine if critical
-
-                // Set icon and color based on alert type
-                Icon alertIcon;
-                Color alertColor;
-
-                switch (alertType) {
-                  case 'wifi':
-                    alertIcon = Icon(Icons.wifi_off, color: Colors.orange);
-                    alertColor = Colors.orange;
-                    break;
-                  case 'light':
-                    alertIcon = Icon(Icons.lightbulb_outline, color: isCritical ? Colors.red : Colors.yellow);
-                    alertColor = isCritical ? Colors.red : Colors.yellow;
-                    break;
-                  case 'sensor':
-                    alertIcon = Icon(Icons.sensors, color: Colors.blue);
-                    alertColor = Colors.blue;
-                    break;
-                  default:
-                    alertIcon = Icon(Icons.warning, color: Colors.grey);
-                    alertColor = Colors.grey;
-                    break;
-                }
-
-                return Card(
-                  margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                  child: ListTile(
-                    contentPadding: EdgeInsets.all(10),
-                    leading: alertIcon,
-                    title: Text(
-                      message,
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: alertColor,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'Detected at: $timestamp',
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: Icon(Icons.cancel, color: Colors.grey),
-                          onPressed: () => _dismissAlert(index),
-                          tooltip: 'Dismiss Alert',
-                        ),
-                        if (isCritical) // Show emergency button for critical alerts only
-                          IconButton(
-                            icon: Icon(Icons.phone, color: Colors.red),
-                            onPressed: _callEmergency,
-                            tooltip: 'Call Emergency',
-                          ),
-                      ],
-                    ),
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : _alerts.isEmpty
+              ? Center(
+                  child: Text(
+                    'No alerts available',
+                    style: TextStyle(fontSize: 16.0),
                   ),
-                );
-              },
+                )
+              : ListView.builder(
+                  itemCount: _alerts.length,
+                  itemBuilder: (context, index) {
+                    final alert = _alerts[index];
+                    return Card(
+                      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                      child: ListTile(
+                        leading: Icon(
+                          alert['isCritical'] ? Icons.warning : Icons.info,
+                          color: alert['isCritical'] ? Colors.red : Colors.blue,
+                        ),
+                        title: Text(
+                          alert['message'],
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: alert['isCritical'] ? Colors.red : Colors.black,
+                          ),
+                        ),
+                        subtitle: Text('Timestamp: ${alert['timestamp']}'),
+                      ),
+                    );
+                  },
+                ),
+      bottomNavigationBar: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: ElevatedButton(
+          onPressed: _callEmergency,
+          child: Text('Call Emergency'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red, // Red button for emergency
+            padding: EdgeInsets.symmetric(vertical: 16.0),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(30.0),
             ),
+          ),
+        ),
+      ),
     );
   }
 }

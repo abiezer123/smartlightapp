@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 class LogsScreen extends StatefulWidget {
+  const LogsScreen({super.key});
+
   @override
   _LogsScreenState createState() => _LogsScreenState();
 }
@@ -29,8 +31,13 @@ class _LogsScreenState extends State<LogsScreen> {
       final response = await http.get(Uri.parse(esp32Url));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        List<Map<String, dynamic>> logs = List<Map<String, dynamic>>.from(data['logs']);
+
+        // Filter out unauthorized access logs
+        logs = logs.where((log) => log['event'] != 'Unauthorized device connected!').toList();
+
         setState(() {
-          _logs = List<Map<String, dynamic>>.from(data['logs']);
+          _logs = logs;
         });
       }
     } catch (e) {

@@ -57,38 +57,90 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("ESP32 Login"),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+ @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: Colors.grey[100],
+    body: Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Logo or Title
+            Icon(Icons.lock_outline, size: 80, color: Colors.blueAccent),
+            const SizedBox(height: 20),
+            Text(
+              "SmartLight Login",
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.bold,
+                color: Colors.blueGrey[800],
+              ),
+            ),
+            const SizedBox(height: 30),
+
+            // Username
             TextField(
               controller: _usernameController,
-              decoration: InputDecoration(labelText: "Username"),
+              decoration: InputDecoration(
+                prefixIcon: Icon(Icons.person),
+                labelText: "Username",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
+            const SizedBox(height: 20),
+
+            // Password
             TextField(
               controller: _passwordController,
-              decoration: InputDecoration(labelText: "Password"),
               obscureText: true,
+              decoration: InputDecoration(
+                prefixIcon: Icon(Icons.lock),
+                labelText: "Password",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _login,
-              child: Text("Login"),
+            const SizedBox(height: 30),
+
+            // Login Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _login,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: Colors.blueAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  "Login",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ),
             ),
-            SizedBox(height: 20),
-            Text(
-              _responseMessage,
-              style: TextStyle(color: Colors.red),
-            ),
+
+            const SizedBox(height: 20),
+
+            // Response Message
+            if (_responseMessage.isNotEmpty)
+              Text(
+                _responseMessage,
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }

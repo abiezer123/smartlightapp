@@ -4,6 +4,8 @@ import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:async';
+import 'login_screen.dart';
+
 
 class DashboardScreen extends StatefulWidget {
   @override
@@ -71,19 +73,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _toggleAutomation() async {
-    const String esp32Url = 'http://192.168.4.1/toggleAuto';
+  const String esp32Url = 'http://192.168.4.1/toggleAuto';
 
-    try {
-      final response = await http.get(Uri.parse(esp32Url));
-      if (response.statusCode == 200) {
-        setState(() {
-          _isAutomationEnabled = response.body.contains('true');
-        });
-      }
-    } catch (e) {
-      print('Error toggling automation: $e');
+  try {
+    final response = await http.get(Uri.parse(esp32Url));
+    if (response.statusCode == 200) {
+      setState(() {
+        _isAutomationEnabled = response.body.contains('true');
+        if (!_isAutomationEnabled) {
+          // When automation is turned off, turn on all LEDs
+          for (int id = 0; id < 4; id++) {
+            _toggleLed(id, true); // Set all LEDs to ON
+          }
+        }
+      });
     }
+  } catch (e) {
+    print('Error toggling automation: $e');
   }
+}
+
 
   Future<void> _toggleLed(int id, bool state) async {
     const String esp32Url = 'http://192.168.4.1/setLED';
@@ -126,102 +135,107 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<int> _getActiveLedIds() {
     return _isAutomationEnabled ? [1, 2, 3, 4] : [0, 1, 2, 3];
   }
+
+
 @override
 Widget build(BuildContext context) {
   return Scaffold(
-    backgroundColor: Color(0xFFF1F1F1), // Slightly darker than white (beige tone)
+    backgroundColor: Color(0xFFF5F5F5), // Light grey background for modern feel
     appBar: AppBar(
       title: Text(
         'Dashboard',
         style: TextStyle(
+          fontSize: 26,
+          fontWeight: FontWeight.w600,
           color: Colors.white,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
         ),
       ),
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.blueAccent, // Softer accent color for app bar
+      elevation: 6, // Subtle shadow for app bar
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(25)),
+      ),
     ),
-    body: SingleChildScrollView( // Make the whole page scrollable
-      child: Column(
-        children: [
-          // Map container
-          Container(
-            margin: EdgeInsets.all(10),
-            width: MediaQuery.of(context).size.width * 0.95, // Adjust width
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black26,
-                  blurRadius: 6,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-            clipBehavior: Clip.antiAlias,
-            height: MediaQuery.of(context).size.height * 0.4,
-            child: FlutterMap(
-              options: MapOptions(
-                center: LatLng(14.700356, 121.031860),
-                zoom: 17.0,
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  subdomains: ['a', 'b', 'c'],
-                ),
-                MarkerLayer(
-                  markers: _getDynamicLedLocations().entries.map((entry) {
-                    final id = entry.key;
-                    final location = entry.value;
-                    final isOn = _ledStatuses[id] ?? false;
-
-                    return Marker(
-                      width: 80.0,
-                      height: 80.0,
-                      point: location,
-                      builder: (ctx) => GestureDetector(
-                        onTap: () => _toggleLed(id, !isOn),
-                        child: Icon(
-                        Icons.lightbulb, // or use Icons.light_outlined
-                        color: isOn ? Colors.green : Colors.red,
-                        size: 30.0,
-                      ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ],
-            ),
-          ),
-          
-            // Button container for control and navigation
+    body: SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            // Map Container
             Container(
-              margin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-              width: MediaQuery.of(context).size.width * 0.95, // Adjust width
-              padding: EdgeInsets.all(16),
+              height: MediaQuery.of(context).size.height * 0.4,
+              margin: EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(15),
+                borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black12,
-                    blurRadius: 6,
-                    offset: Offset(0, 2),
+                    blurRadius: 7,
+                    offset: Offset(0, 5),
+                  ),
+                ],
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: FlutterMap(
+                options: MapOptions(
+                  center: LatLng(14.700356, 121.031860),
+                  zoom: 17.0,
+                ),
+                children: [
+                  TileLayer(
+                    urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    subdomains: ['a', 'b', 'c'],
+                  ),
+                  MarkerLayer(
+                    markers: _getDynamicLedLocations().entries.map((entry) {
+                      final id = entry.key;
+                      final location = entry.value;
+                      final isOn = _ledStatuses[id] ?? false;
+
+                      return Marker(
+                        width: 70.0,
+                        height: 70.0,
+                        point: location,
+                        builder: (ctx) => GestureDetector(
+                          onTap: () => _toggleLed(id, !isOn),
+                          child: Icon(
+                            Icons.lightbulb_outline, // Lightbulb outline for cleaner look
+                            color: isOn ? Colors.green : Colors.red,
+                            size: 32.0,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+
+            // Button Control Container
+            Container(
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 8,
+                    offset: Offset(0, 4),
                   ),
                 ],
               ),
               child: Column(
                 children: [
-                  // Automation and LED controls
+                  // Automation Mode
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         'Automation Mode',
                         style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
                           color: Colors.black,
                         ),
                       ),
@@ -230,16 +244,16 @@ Widget build(BuildContext context) {
                         onChanged: (value) => _toggleAutomation(),
                         activeColor: Colors.green,
                         inactiveThumbColor: Colors.red,
-                        inactiveTrackColor: Colors.grey,
+                        inactiveTrackColor: Colors.grey.shade300,
                       ),
                     ],
                   ),
-                  SizedBox(height: 10),
+                  SizedBox(height: 15),
                   Text(
                     'Manual LED Controls',
                     style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
                       color: Colors.black,
                     ),
                   ),
@@ -266,29 +280,32 @@ Widget build(BuildContext context) {
                     );
                   }),
                   SizedBox(height: 15),
-                  Center(
-                    child: ElevatedButton(
-                      onPressed: _isAutomationEnabled
-                          ? null
-                          : () {
-                              for (int id = 0; id < 4; id++) {
-                                final newState = !_ledStatuses[id]!;
-                                _toggleLed(id, newState);
-                              }
-                            },
-                      child: Text('Toggle All LEDs'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _isAutomationEnabled ? Colors.grey : Colors.blueGrey,
-                        foregroundColor: Colors.white,
+                  ElevatedButton(
+                    onPressed: _isAutomationEnabled
+                        ? null
+                        : () {
+                            for (int id = 0; id < 4; id++) {
+                              final newState = !_ledStatuses[id]!;
+                              _toggleLed(id, newState);
+                            }
+                          },
+                    child: Text('Toggle All LEDs'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _isAutomationEnabled ? Colors.grey : Colors.blueAccent,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(vertical: 12, horizontal: 30),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
                       ),
                     ),
                   ),
-                                  SizedBox(height: 20),
                 ],
               ),
             ),
 
-          SizedBox(height: 20),
+            SizedBox(height: 20),
+
+            // Navigation Buttons Container
             Container(
               padding: EdgeInsets.symmetric(horizontal: 10),
               child: Column(
@@ -296,143 +313,79 @@ Widget build(BuildContext context) {
                   Row(
                     children: [
                       // Logs Button (left side)
-                      Expanded(
-                        child: Container(
-                          height: 130,
-                          margin: EdgeInsets.only(right: 5),
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 6,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, '/logs');
-                            },
-                            style: ElevatedButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              elevation: 0,
-                            ),
-                            child: Text('Logs'),
-                          ),
-                        ),
-                      ),
+                      _buildNavButton(context, 'Logs', '/logs'),
                       // Alerts Button (right side)
-                      Expanded(
-                        child: Container(
-                          height: 130,
-                          margin: EdgeInsets.only(left: 5),
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 6,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, '/alerts');
-                            },
-                            style: ElevatedButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              elevation: 0,
-                            ),
-                            child: Text('Alerts'),
-                          ),
-                        ),
-                      ),
+                      _buildNavButton(context, 'Alerts', '/alerts'),
                     ],
                   ),
                   SizedBox(height: 20),
                   Row(
                     children: [
                       // Schedule Button (left side)
-                      Expanded(
-                        child: Container(
-                          height: 130,
-                          margin: EdgeInsets.only(right: 5),
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 6,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, '/schedule');
-                            },
-                            style: ElevatedButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              elevation: 0,
-                            ),
-                            child: Center(child: Text('Schedule')),
-                          ),
-                        ),
-                      ),
-                      // Manage MACs Button (right side)
-                      Expanded(
-                        child: Container(
-                          height: 130,
-                          margin: EdgeInsets.only(left: 5),
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black12,
-                                blurRadius: 6,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pushNamed(context, '/managemac');
-                            },
-                            style: ElevatedButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              backgroundColor: Colors.white,
-                              foregroundColor: Colors.black,
-                              elevation: 0,
-                            ),
-                            child: Text('Manage Devices'),
-                          ),
-                        ),
-                      ),
+                      _buildNavButton(context, 'Schedule', '/schedule'),
+                      // Manage Devices Button (right side)
+                      _buildNavButton(context, 'Manage Devices', '/managemac'),
                     ],
                   ),
-                  SizedBox(height: 30),
+                  SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.pushNamed(context, '/login');
+                    },
+                    icon: Icon(Icons.logout),
+                    label: Text("Logout"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 40),
                 ],
               ),
             ),
-          ]
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
+// Helper method to build navigation buttons
+Widget _buildNavButton(BuildContext context, String label, String route) {
+  return Expanded(
+    child: Container(
+      height: 130,
+      margin: EdgeInsets.symmetric(horizontal: 5),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ElevatedButton(
+        onPressed: () {
+          Navigator.pushNamed(context, route);
+        },
+        style: ElevatedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+        ),
+        child: Text(label),
+      ),
+    ),
+  );
+}
+
   }
