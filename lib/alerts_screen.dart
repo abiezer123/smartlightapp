@@ -18,6 +18,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
     _fetchAlerts();
   }
 
+  // Fetch alerts from the ESP32 server
   Future<void> _fetchAlerts() async {
     // Replace with your ESP32's IP address
     const String esp32Url = 'http://192.168.4.1/faultAlert';
@@ -36,14 +37,15 @@ class _AlertsScreenState extends State<AlertsScreen> {
     }
   }
 
+  // Dismiss alert by index
   void _dismissAlert(int index) {
     setState(() {
       _alerts.removeAt(index);
     });
   }
 
+  // Call emergency services (you can replace this with actual functionality)
   void _callEmergency() {
-    // Replace with actual emergency call handling (e.g., open a call intent)
     print('Emergency services called!');
   }
 
@@ -64,18 +66,49 @@ class _AlertsScreenState extends State<AlertsScreen> {
               itemCount: _alerts.length,
               itemBuilder: (context, index) {
                 final alert = _alerts[index];
+                String alertType = alert['type'] ?? 'Unknown';
+                String message = alert['message'] ?? 'Unknown Alert';
+                String timestamp = alert['timestamp'] ?? 'Unknown time';
+                bool isCritical = alert['isCritical'] ?? false; // Determine if critical
+
+                // Set icon and color based on alert type
+                Icon alertIcon;
+                Color alertColor;
+
+                switch (alertType) {
+                  case 'wifi':
+                    alertIcon = Icon(Icons.wifi_off, color: Colors.orange);
+                    alertColor = Colors.orange;
+                    break;
+                  case 'light':
+                    alertIcon = Icon(Icons.lightbulb_outline, color: isCritical ? Colors.red : Colors.yellow);
+                    alertColor = isCritical ? Colors.red : Colors.yellow;
+                    break;
+                  case 'sensor':
+                    alertIcon = Icon(Icons.sensors, color: Colors.blue);
+                    alertColor = Colors.blue;
+                    break;
+                  default:
+                    alertIcon = Icon(Icons.warning, color: Colors.grey);
+                    alertColor = Colors.grey;
+                    break;
+                }
+
                 return Card(
                   margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                   child: ListTile(
+                    contentPadding: EdgeInsets.all(10),
+                    leading: alertIcon,
                     title: Text(
-                      alert['message'] ?? 'Unknown Alert',
+                      message,
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Colors.red,
+                        color: alertColor,
                       ),
                     ),
                     subtitle: Text(
-                      'Detected at: ${alert['timestamp'] ?? 'Unknown time'}',
+                      'Detected at: $timestamp',
+                      style: TextStyle(color: Colors.grey),
                     ),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -85,11 +118,12 @@ class _AlertsScreenState extends State<AlertsScreen> {
                           onPressed: () => _dismissAlert(index),
                           tooltip: 'Dismiss Alert',
                         ),
-                        IconButton(
-                          icon: Icon(Icons.phone, color: Colors.red),
-                          onPressed: _callEmergency,
-                          tooltip: 'Call Emergency',
-                        ),
+                        if (isCritical) // Show emergency button for critical alerts only
+                          IconButton(
+                            icon: Icon(Icons.phone, color: Colors.red),
+                            onPressed: _callEmergency,
+                            tooltip: 'Call Emergency',
+                          ),
                       ],
                     ),
                   ),

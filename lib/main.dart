@@ -1,20 +1,18 @@
 import 'package:flutter/material.dart';
-//import 'login_screen.dart';
+import 'package:smartapp/managemac_screen.dart';
 import 'dashboard_screen.dart';
+import 'schedule_screen.dart';
+import 'logs_screen.dart';
+import 'alerts_screen.dart';
 
 void main() {
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false, // Removes the debug banner
-      theme: ThemeData.dark(), // Global dark mode theme
-      home: DashboardScreen(),  //LoginScreen(), // Entry point: LoginScreen
-    );
-  }
+  runApp(MaterialApp(
+    home: DashboardScreen(),
+    routes: {
+      '/schedule': (context) => ScheduleScreen(),
+      '/logs': (context) => LogsScreen(),
+      '/alerts': (context) => AlertsScreen(),
+      '/managemac': (context) => ManageMACScreen(),
+    },
+  ));
 }
