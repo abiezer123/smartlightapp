@@ -68,10 +68,10 @@ Widget build(BuildContext context) {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Logo or Title
-            Icon(Icons.lock_outline, size: 80, color: Colors.blueAccent),
+            Icon(Icons.lightbulb_outline, size: 80, color: Colors.blueAccent),
             const SizedBox(height: 20),
             Text(
-              "SmartLight Login",
+              "SmarLight Login",
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,

@@ -24,7 +24,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
       _isLoading = true;
     });
 
-    const String esp32Url = 'http://192.168.4.1/faultAlert';
+    const String esp32Url = 'http://192.168.4.1/getAlerts'; // Updated URL
 
     try {
       final response = await http.get(Uri.parse(esp32Url));
@@ -41,8 +41,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
         _isLoading = false;
       });
     }
-  }
-
+}
   void _callEmergency() {
     // Simulate calling emergency services
     print('📞 Emergency services called!');
