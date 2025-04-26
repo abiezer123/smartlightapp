@@ -30,8 +30,19 @@ class _AlertsScreenState extends State<AlertsScreen> {
       final response = await http.get(Uri.parse(esp32Url));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
+        List<Map<String, dynamic>> alerts = List<Map<String, dynamic>>.from(data['alerts']);
+
+        // Sort alerts by timestamp in descending order
+        try {
+          alerts.sort((a, b) {
+            return b['timestamp'].compareTo(a['timestamp']); // Sort in descending order
+          });
+        } catch (e) {
+          print('Error sorting alerts: $e');
+        }
+
         setState(() {
-          _alerts = List<Map<String, dynamic>>.from(data['alerts']);
+          _alerts = alerts;
         });
       }
     } catch (e) {
@@ -41,7 +52,8 @@ class _AlertsScreenState extends State<AlertsScreen> {
         _isLoading = false;
       });
     }
-}
+  }
+
   void _callEmergency() {
     // Simulate calling emergency services
     print('📞 Emergency services called!');
@@ -83,7 +95,7 @@ class _AlertsScreenState extends State<AlertsScreen> {
                             color: alert['isCritical'] ? Colors.red : Colors.black,
                           ),
                         ),
-                        subtitle: Text('Timestamp: ${alert['timestamp']}'),
+                        subtitle: Text('Timestamp: ${alert['timestamp']}'), // Display timestamp in milliseconds
                       ),
                     );
                   },

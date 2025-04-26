@@ -36,6 +36,15 @@ class _LogsScreenState extends State<LogsScreen> {
         // Filter out unauthorized access logs
         logs = logs.where((log) => log['event'] != 'Unauthorized device connected!').toList();
 
+        // Sort logs by timestamp in descending order
+      try {
+        logs.sort((a, b) {
+          return b['timestamp'].compareTo(a['timestamp']); // Sort in descending order
+        });
+      } catch (e) {
+        print('Error sorting logs: $e');
+      }
+
         setState(() {
           _logs = logs;
         });
